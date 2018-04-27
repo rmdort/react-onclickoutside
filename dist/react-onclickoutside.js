@@ -85,7 +85,7 @@ function findHighest(current, componentNode, ignoreClass) {
  * Check if the browser scrollbar was clicked
  */
 
-function clickedScrollbar(evt) {
+function clickedScrollbar(evt, document) {
   return document.documentElement.clientWidth <= evt.clientX || document.documentElement.clientHeight <= evt.clientY;
 }
 
@@ -144,13 +144,23 @@ function getEventHandlerOptions(instance, eventName) {
   return handlerOptions;
 }
 /**
+ * Check if browser
+ */
+
+
+var isBrowser = typeof document !== 'undefined';
+/**
+ * Default document
+ */
+
+var defaultDocument = isBrowser ? document : undefined;
+/**
  * This function generates the HOC function that you'll use
  * in order to impart onOutsideClick listening to an
  * arbitrary component. It gets called at the end of the
  * bootstrapping code to yield an instance of the
  * onClickOutsideHOC function defined inside setupHOC().
  */
-
 
 function onClickOutsideHOC(WrappedComponent, config) {
   var _class, _temp;
@@ -188,7 +198,7 @@ function onClickOutsideHOC(WrappedComponent, config) {
       };
 
       _this.enableOnClickOutside = function () {
-        if (typeof document === 'undefined' || enabledInstances[_this._uid]) {
+        if (typeof _this.props.document === 'undefined' || enabledInstances[_this._uid]) {
           return;
         }
 
@@ -215,10 +225,10 @@ function onClickOutsideHOC(WrappedComponent, config) {
             event.stopPropagation();
           }
 
-          if (_this.props.excludeScrollbar && clickedScrollbar(event)) return;
+          if (_this.props.excludeScrollbar && clickedScrollbar(event, _this.props.document)) return;
           var current = event.target;
 
-          if (findHighest(current, _this.componentNode, _this.props.outsideClickIgnoreClass) !== document) {
+          if (findHighest(current, _this.componentNode, _this.props.outsideClickIgnoreClass) !== _this.props.document) {
             return;
           }
 
@@ -226,7 +236,7 @@ function onClickOutsideHOC(WrappedComponent, config) {
         };
 
         events.forEach(function (eventName) {
-          document.addEventListener(eventName, handlersMap[_this._uid], getEventHandlerOptions(_this, eventName));
+          _this.props.document.addEventListener(eventName, handlersMap[_this._uid], getEventHandlerOptions(_this, eventName));
         });
       };
 
@@ -234,7 +244,7 @@ function onClickOutsideHOC(WrappedComponent, config) {
         delete enabledInstances[_this._uid];
         var fn = handlersMap[_this._uid];
 
-        if (fn && typeof document !== 'undefined') {
+        if (fn && typeof _this.props.document !== 'undefined') {
           var events = _this.props.eventTypes;
 
           if (!events.forEach) {
@@ -242,7 +252,7 @@ function onClickOutsideHOC(WrappedComponent, config) {
           }
 
           events.forEach(function (eventName) {
-            return document.removeEventListener(eventName, fn, getEventHandlerOptions(_this, eventName));
+            return _this.props.document.removeEventListener(eventName, fn, getEventHandlerOptions(_this, eventName));
           });
           delete handlersMap[_this._uid];
         }
@@ -279,7 +289,7 @@ function onClickOutsideHOC(WrappedComponent, config) {
       // If we are in an environment without a DOM such
       // as shallow rendering or snapshots then we exit
       // early to prevent any unhandled errors being thrown.
-      if (typeof document === 'undefined' || !document.createElement) {
+      if (typeof this.props.document === 'undefined' || !this.props.document.createElement) {
         return;
       }
 
@@ -340,7 +350,8 @@ function onClickOutsideHOC(WrappedComponent, config) {
     excludeScrollbar: config && config.excludeScrollbar || false,
     outsideClickIgnoreClass: IGNORE_CLASS_NAME,
     preventDefault: false,
-    stopPropagation: false
+    stopPropagation: false,
+    document: defaultDocument
   }, _class.getClass = function () {
     return WrappedComponent.getClass ? WrappedComponent.getClass() : WrappedComponent;
   }, _temp;
